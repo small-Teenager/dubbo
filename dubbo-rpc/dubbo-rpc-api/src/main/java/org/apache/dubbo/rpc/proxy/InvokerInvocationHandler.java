@@ -51,10 +51,13 @@ public class InvokerInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        // 方法所在的类型为object 直接调用invoker
         if (method.getDeclaringClass() == Object.class) {
             return method.invoke(invoker, args);
         }
+        // 方法名
         String methodName = method.getName();
+        // 参数类型
         Class<?>[] parameterTypes = method.getParameterTypes();
         if (parameterTypes.length == 0) {
             if ("toString".equals(methodName)) {
@@ -70,16 +73,18 @@ public class InvokerInvocationHandler implements InvocationHandler {
         }
         RpcInvocation rpcInvocation = new RpcInvocation(method, invoker.getInterface().getName(), protocolServiceKey, args);
         String serviceKey = invoker.getUrl().getServiceKey();
+        // 设置目标服务器地址
         rpcInvocation.setTargetServiceUniqueName(serviceKey);
 
         // invoker.getUrl() returns consumer url.
+        // 返回消费者url
         RpcContext.setRpcContext(invoker.getUrl());
 
         if (consumerModel != null) {
             rpcInvocation.put(Constants.CONSUMER_MODEL, consumerModel);
             rpcInvocation.put(Constants.METHOD_MODEL, consumerModel.getMethodModel(method));
         }
-
+        // 调用invoker
         return invoker.invoke(rpcInvocation).recreate();
     }
 }

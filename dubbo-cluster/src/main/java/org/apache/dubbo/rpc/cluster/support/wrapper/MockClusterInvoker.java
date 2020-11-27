@@ -86,12 +86,13 @@ public class MockClusterInvoker<T> implements ClusterInvoker<T> {
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
         Result result = null;
-
+        // 获取mock 配置项 有多种配置项
         String value = getUrl().getMethodParameter(invocation.getMethodName(), MOCK_KEY, Boolean.FALSE.toString()).trim();
         if (value.length() == 0 || "false".equalsIgnoreCase(value)) {
-            //no mock
+            //no mock 没有mock配置
             result = this.invoker.invoke(invocation);
         } else if (value.startsWith("force")) {
+            // 强制服务降级
             if (logger.isWarnEnabled()) {
                 logger.warn("force-mock: " + invocation.getMethodName() + " force-mock enabled , url : " + getUrl());
             }
@@ -99,15 +100,19 @@ public class MockClusterInvoker<T> implements ClusterInvoker<T> {
             result = doMockInvoke(invocation, null);
         } else {
             //fail-mock
+            // 失败服务降级
             try {
+                // 正常调用
                 result = this.invoker.invoke(invocation);
 
                 //fix:#4585
                 if(result.getException() != null && result.getException() instanceof RpcException){
                     RpcException rpcException= (RpcException)result.getException();
+                    // BIZ_EXCEPTION throw rpcException
                     if(rpcException.isBiz()){
                         throw  rpcException;
                     }else {
+                     //服务降级
                         result = doMockInvoke(invocation, rpcException);
                     }
                 }
@@ -120,6 +125,7 @@ public class MockClusterInvoker<T> implements ClusterInvoker<T> {
                 if (logger.isWarnEnabled()) {
                     logger.warn("fail-mock: " + invocation.getMethodName() + " fail-mock enabled , url : " + getUrl(), e);
                 }
+                // 调用失败 服务降级
                 result = doMockInvoke(invocation, e);
             }
         }

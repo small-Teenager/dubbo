@@ -48,14 +48,17 @@ public class MockInvokersSelector extends AbstractRouter {
         if (CollectionUtils.isEmpty(invokers)) {
             return invokers;
         }
-
+        // attachments 为null 获得普通的invoker集合
         if (invocation.getObjectAttachments() == null) {
             return getNormalInvokers(invokers);
         } else {
+            // 是否需要降级的值
             String value = (String) invocation.getObjectAttachments().get(INVOCATION_NEED_MOCK);
             if (value == null) {
+                // 获得普通的invoker集合
                 return getNormalInvokers(invokers);
             } else if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
+                // 获得mockedInvoker集合
                 return getMockedInvokers(invokers);
             }
         }
