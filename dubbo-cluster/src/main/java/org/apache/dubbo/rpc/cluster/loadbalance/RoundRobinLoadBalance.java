@@ -29,14 +29,19 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Round robin load balance.
+ * 权重相同 就取模轮询
+ * 权重不同 获取当前的权重基数，然后从权重集合中筛选权重大于当前权重基数的集合，如果筛选出的集合长度为1，此时访问的机器就是集合中权重对应的机器
  */
 public class RoundRobinLoadBalance extends AbstractLoadBalance {
     public static final String NAME = "roundrobin";
 
+    // 回收间隔
     private static final int RECYCLE_PERIOD = 60000;
 
+    // 加权轮询器，记录了服务提供者的权重，请求数，最后更新时间
     protected static class WeightedRoundRobin {
-        private int weight;
+        private int weight;//权重
+        // 目前有多少请求落在服务提供者身上 可以看成是一个动态的权重
         private AtomicLong current = new AtomicLong(0);
         private long lastUpdate;
 
@@ -88,14 +93,16 @@ public class RoundRobinLoadBalance extends AbstractLoadBalance {
 
     @Override
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {
+        // key 全限定类名
         String key = invokers.get(0).getUrl().getServiceKey() + "." + invocation.getMethodName();
         ConcurrentMap<String, WeightedRoundRobin> map = methodWeightMap.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
         int totalWeight = 0;
-        long maxCurrent = Long.MIN_VALUE;
+        long maxCurrent = Long.MIN_VALUE;//最小权重
         long now = System.currentTimeMillis();
         Invoker<T> selectedInvoker = null;
-        WeightedRoundRobin selectedWRR = null;
+        WeightedRoundRobin selectedWRR = null;// 创建轮询加权器
         for (Invoker<T> invoker : invokers) {
+            // 遍历invokers 检测当前invoker是否有weightedRoundRobin 没有则创建
             String identifyString = invoker.getUrl().toIdentityString();
             int weight = getWeight(invoker, invocation);
             WeightedRoundRobin weightedRoundRobin = map.computeIfAbsent(identifyString, k -> {
@@ -103,13 +110,15 @@ public class RoundRobinLoadBalance extends AbstractLoadBalance {
                 wrr.setWeight(weight);
                 return wrr;
             });
-
+            // 检测invoker的权重是否发生变化，变化则更新
             if (weight != weightedRoundRobin.getWeight()) {
                 //weight changed
                 weightedRoundRobin.setWeight(weight);
             }
+            //计数器+1
             long cur = weightedRoundRobin.increaseCurrent();
             weightedRoundRobin.setLastUpdate(now);
+            // 当落在服务提供者的统计数>最大可承受数 重新赋值
             if (cur > maxCurrent) {
                 maxCurrent = cur;
                 selectedInvoker = invoker;

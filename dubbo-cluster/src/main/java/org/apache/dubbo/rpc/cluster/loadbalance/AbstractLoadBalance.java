@@ -34,6 +34,7 @@ import static org.apache.dubbo.rpc.cluster.Constants.WEIGHT_KEY;
 
 /**
  * AbstractLoadBalance
+ * 提供权重计算的功能
  */
 public abstract class AbstractLoadBalance implements LoadBalance {
     /**
