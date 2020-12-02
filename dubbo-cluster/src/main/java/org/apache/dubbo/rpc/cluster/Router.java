@@ -44,7 +44,7 @@ public interface Router extends Comparable<Router> {
 
     /**
      * Filter invokers with current routing rule and only return the invokers that comply with the rule.
-     *
+     * 使用当前路由规则过滤调用程序，并且仅返回符合规则的调用程序。
      * @param invokers   invoker list
      * @param url        refer url
      * @param invocation invocation
@@ -57,7 +57,7 @@ public interface Router extends Comparable<Router> {
     /**
      * Notify the router the invoker list. Invoker list may change from time to time. This method gives the router a
      * chance to prepare before {@link Router#route(List, URL, Invocation)} gets called.
-     *
+     * 通知路由器调用者列表。
      * @param invokers invoker list
      * @param <T>      invoker's type
      */
@@ -68,7 +68,7 @@ public interface Router extends Comparable<Router> {
     /**
      * To decide whether this router need to execute every time an RPC comes or should only execute when addresses or
      * rule change.
-     *
+     * 决定此路由器是否需要在每次RPC出现时执行，还是仅在地址或规则更改时执行。
      * @return true if the router need to execute every time.
      */
     boolean isRuntime();
@@ -84,7 +84,7 @@ public interface Router extends Comparable<Router> {
 
     /**
      * Router's priority, used to sort routers.
-     *
+     * 路由器的优先级，用于对路由器进行排序。
      * @return router's priority
      */
     int getPriority();
